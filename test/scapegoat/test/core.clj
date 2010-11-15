@@ -158,9 +158,9 @@
 (deftests-for-binding-set mutability insert
   (testing "Insert, delete, insert should set the root to last inserted node"
     (let [tree (-> (new-tree galperin-alpha)
-                   (insert-pair 80 :foo)
-                   (delete-key 80 true)
-                   (insert-pair 9 :bar))
+                   (insert 80 :foo)
+                   (delete 80)
+                   (insert 9 :bar))
           root (root-node tree)]
       (is (= (node-key root) 9))
       (is (= (node-value root) :bar))))
@@ -168,7 +168,7 @@
     (let [expected (vector->tree mutable galperin-alpha galperin-after-insert)
           actual   (-> (vector->tree mutable galperin-alpha
                                      galperin-before-insert)
-                       (insert-pair 8 true))]
+                       (insert 8 true))]
       (is-valid-bst expected)
       (is-valid-bst actual)
       (are-trees-equal expected actual))))

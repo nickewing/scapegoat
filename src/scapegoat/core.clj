@@ -20,7 +20,9 @@
   (alter-node  [this k v left right] "Alter a node returning another node"))
 
 ;; DummyNode used required for rebuild-tree
-(deftype DummyNode [left right]
+(deftype
+  ^{:private true}
+  DummyNode [left right]
   Node
   (node-key    [this] nil)
   (node-value  [this] nil)
@@ -59,7 +61,7 @@
         (> key (node-key node)) (recur (right-child node) key)
         true                    (node-value node)))
 
-(defn search-tree
+(defn search
   "Search a tree for a key"
   [tree key]
   (search-node (root-node tree) key))
@@ -73,24 +75,23 @@
 
 (defn- print-node
   "Recursively print a tree downwards from the given node"
-  [node d side values]
+  [node d side]
   (when node
-    (print (str/repeat (* d 2) " "))
-    (print side (node-key node))
-    (if values
-      (print (node-value node)))
+    (print (str/repeat (* d 2) " ")
+           side (node-key node)
+           (node-value node))
     (println)
-    (print-node (left-child node)  (inc d) "L" values)
-    (print-node (right-child node) (inc d) "R" values)
+    (print-node (left-child node)  (inc d) "L")
+    (print-node (right-child node) (inc d) "R")
     node))
 
 (defn print-tree
   "Print a tree starting at its root"
-  [tree values]
+  [tree]
   (println (str "Tree(size: " (tree-size tree)
                 ", max-size: " (max-size tree) "):"))
   (if-let [root (root-node tree)]
-    (print-node root 1 "Root" values)
+    (print-node root 1 "Root")
     (println "<Empty tree>"))
   tree)
 
@@ -132,7 +133,6 @@
    i > height-alpha(size(x_i)), where i is the number of levels moved upward
    from the inserted node, x_0, and x_i is the ancestor i-levels up from x_0."
   [alpha pos]
-  ;; (println (str "Rebalance needed for insert of " (node-key (zip/node pos))))
   (loop [x0 pos size0 1 i0 0] ;; size(x0) = 1, since we know it's a leaf
     (let [node0 (zip/node x0)
           i1    (inc i0)
@@ -141,8 +141,6 @@
           size1 (if (= (left-child node1) node0)
                   (+ 1 size0 (node-size (right-child node1)))
                   (+ 1 size0 (node-size (left-child node1))))]
-      ;; (println (str "k: " (node-key node1) " size: " size1
-      ;;               " i: " i1 " > ha:" (height-alpha size1)))
       (if (> i1 (height-alpha alpha size1))
         (zip/replace x1 (rebuild-tree-from-node size1 node1))
         (recur x1 size1 i1)))))
@@ -187,7 +185,7 @@
        (max (max-size tree) size)))
     (alter-tree tree new-node 1 1)))
 
-(defn insert-pair
+(defn insert
   "Insert a key-value pair into a tree"
   [tree key value]
   (insert-node tree (new-node tree key value nil nil) true))
@@ -283,6 +281,11 @@
         (alter-tree tree root size max-size))
       (throw (Exception. "Key does not exist to delete")))))
 
+(defn delete
+  "Delete a node from a tree with the given key"
+  [tree key]
+  (delete-key tree key true))
+
 ;; Immutable Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -326,6 +329,10 @@
 
 ;; Mutable Implementation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; NOTE: the mutable implementation is just an experiment and is often much
+;; slower than the immutable version anyway.  If a mutable tree is needed, a
+;; ref containing an immutable tree is likely sufficient.
 
 (deftype MutableNode [key value left right]
   Node
